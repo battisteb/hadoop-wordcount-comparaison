@@ -46,7 +46,7 @@ def envoyer_hdfs(nom_fichier):
     """Copie data/<nom_fichier> dans HDFS (/input/<nom>/). Renvoie (chemin HDFS, durée)."""
     dossier = f"/input/{os.path.splitext(nom_fichier)[0]}"
     t0 = time.perf_counter()
-    sh(f"hdfs dfs -mkdir -p {dossier} && hdfs dfs -put -f /data/{nom_fichier} {dossier}/")
+    sh(f"hdfs dfs -mkdir -p {dossier} && hdfs dfs -put -f /donnees/{nom_fichier} {dossier}/")
     return dossier, time.perf_counter() - t0
 
 

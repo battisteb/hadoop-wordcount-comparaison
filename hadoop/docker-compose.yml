@@ -1,8 +1,9 @@
-# Mini-cluster Hadoop pseudo-distribué (HDFS + YARN) basé sur l'image officielle Apache.
+# Mini-cluster Hadoop pseudo-distribué (HDFS + YARN) basé sur l'image officielle Apache (+ python3).
 # Lancement : docker compose -f hadoop/docker-compose.yml up -d
 services:
   namenode:
-    image: apache/hadoop:3.4.1
+    image: hadoop-wordcount:3.4.1
+    build: .              # apache/hadoop:3.4.1 + python3 (voir Dockerfile)
     hostname: namenode
     command: ["hdfs", "namenode"]
     ports:
@@ -12,15 +13,16 @@ services:
     environment:
       ENSURE_NAMENODE_DIR: "/tmp/hadoop-root/dfs/name"
     volumes:
-      - ../data:/data:ro      # fichiers générés, visibles dans le conteneur
+      - ../data:/donnees:ro     # fichiers générés, visibles dans le conteneur
       - ./:/jobs:ro           # mapper.py / reducer.py pour Hadoop Streaming
   datanode:
-    image: apache/hadoop:3.4.1
+    image: hadoop-wordcount:3.4.1
+    pull_policy: never    # image construite localement par le service namenode
     command: ["hdfs", "datanode"]
     env_file:
       - ./config
   resourcemanager:
-    image: apache/hadoop:3.4.1
+    image: hadoop-wordcount:3.4.1
     hostname: resourcemanager
     command: ["yarn", "resourcemanager"]
     ports:
@@ -28,7 +30,8 @@ services:
     env_file:
       - ./config
   nodemanager:
-    image: apache/hadoop:3.4.1
+    image: hadoop-wordcount:3.4.1
+    pull_policy: never    # image construite localement par le service namenode
     command: ["yarn", "nodemanager"]
     env_file:
       - ./config

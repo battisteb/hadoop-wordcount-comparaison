@@ -8,7 +8,7 @@ Les temps Python sont des temps "murs" de processus complets (équivalent de `ti
 avec le pic de mémoire (RSS). On vérifie aussi que les 3 méthodes donnent le même résultat.
 
 Usage :
-    python src/benchmark.py --n 10000 --m 1 10 100 1000 --repetitions 3 [--sans-hadoop]
+    python src/benchmark.py --n 10000 --m 1 10 100 1000 --repetitions 3 [--sans-hadoop | --sans-python]
 """
 import argparse
 import csv
@@ -61,7 +61,10 @@ def main():
     parser.add_argument("--n", type=int, default=10_000)
     parser.add_argument("--m", type=int, nargs="+", default=[1, 10, 100, 500, 1000, 2000])
     parser.add_argument("--repetitions", type=int, default=3)
+    parser.add_argument("--repetitions-hadoop", type=int, default=1,
+                        help="répétitions des jobs Hadoop (chaque job dure ~1 à 2 min)")
     parser.add_argument("--sans-hadoop", action="store_true")
+    parser.add_argument("--sans-python", action="store_true")
     parser.add_argument("--out", default=os.path.join(RACINE, "results", "benchmark.csv"))
     args = parser.parse_args()
 
@@ -83,8 +86,9 @@ def main():
         reference = wordcount_simple.compter_occurrences(fichier)
         print(f"\n=== m={m} : {args.n * m} lignes, {taille:.2f} Mo", flush=True)
 
-        for methode, script in [("python_simple", "wordcount_simple.py"),
-                                ("pseudo_mapreduce", "wordcount_mapreduce.py")]:
+        methodes_python = [] if args.sans_python else [("python_simple", "wordcount_simple.py"),
+                                                       ("pseudo_mapreduce", "wordcount_mapreduce.py")]
+        for methode, script in methodes_python:
             durees, pics = [], []
             for _ in range(args.repetitions):
                 d, pic, out = executer_python(script, fichier)
@@ -102,7 +106,7 @@ def main():
             for methode, job in [("hadoop_java", hadoop_runner.wordcount_java),
                                  ("hadoop_streaming", hadoop_runner.wordcount_streaming)]:
                 durees = []
-                for _ in range(args.repetitions):
+                for _ in range(args.repetitions_hadoop):
                     resultat, d = job(entree)
                     durees.append(d)
                     assert resultat == reference, f"{methode} : résultat incorrect"
